@@ -155,13 +155,34 @@ async function editSentenceWord(req, res) {
 
 }
 
+const privateRoutesMiddleware = (req, res, next) => {
+	let credentials = req.headers.Authorization;
+	//Basic creds
+	if (credentials) {
+		credentials = credentials.split(" ")[1];
+		if (credentials) {
+			//{login:dhwaudhuia, pass:dnadowad}
+			try {
+				const creadentialsData = JSON.parse(credentials);
+				if (
+					creadentialsData.login === CREDENTIALS_LOGIN && 
+					creadentialsData.pass === CREDENTIALS_PASS
+				) return next();
+			} catch(e) {
+				return res.status(401).send({ error: "access forbidden" });
+			}
+		}
+	}
+	return res.status(401).send({ error: "access forbidden" });
+}
+
 //routes
 app.get("/api/words", getRandomWords);
-app.post("/api/words/add", addWord);
-app.post("/api/words/description", editDescription);
-app.post("/api/words/sentences/add", addSentenceWord);
-app.post("/api/words/sentences/delete", deleteSentenceWord);
-app.post("/api/words/sentences/edit", editSentenceWord);
+app.post("/api/words/add", privateRoutesMiddleware, addWord);
+app.post("/api/words/description", privateRoutesMiddleware, editDescription);
+app.post("/api/words/sentences/add", privateRoutesMiddleware, addSentenceWord);
+app.post("/api/words/sentences/delete", privateRoutesMiddleware, deleteSentenceWord);
+app.post("/api/words/sentences/edit", privateRoutesMiddleware, editSentenceWord);
 
 app.listen(PORT, () => console.log("Server has been started"));
 
